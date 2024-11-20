@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Visit Counter</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
@@ -12,8 +12,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
             font-family: 'Roboto', sans-serif;
             color: black;
+            background-color: #f8f9fa;
+            margin: 0;
         }
 
         #container {
@@ -22,9 +25,10 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            margin: 2rem;
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-            padding: 2px 16px;
+            padding: 1rem;
+            background-color: #fff;
+            border-radius: 10px;
         }
 
         #container>div {
@@ -50,11 +54,11 @@
 <body>
     <main id="container">
         <div>
-            <span id="pageviews-count"></span>
+            <span id="pageviews-count">0</span>
             <h4>Pageviews</h4>
         </div>
         <div>
-            <span id="visits-count"></span>
+            <span id="visits-count">0</span>
             <h4>Visits</h4>
         </div>
     </main>
@@ -63,27 +67,34 @@
         const pageviewsCount = document.getElementById('pageviews-count');
         const visitsCount = document.getElementById('visits-count');
 
-        if (sessionStorage.getItem('visit') === null) {
-            // New visit and pageview
-            updateCounter('type=visit-pageview');
+        // Check if the user is visiting for the first time in the session
+        if (!sessionStorage.getItem('visit')) {
+            updateCounter('type=visit-pageview'); // Increment both pageviews and visits
+            sessionStorage.setItem('visit', 'x'); // Set session flag
         } else {
-            // Pageview
-            updateCounter('type=pageview');
+            updateCounter('type=pageview'); // Increment only pageviews
         }
 
         function updateCounter(type) {
+            const apiUrl = 'https://visit-count-backend.onrender.com/api?' + type; // Backend API URL
 
-            fetch('https://visit-count-backend.onrender.com' + type) // Dynamic request with URL parameter
-                .then(res => res.json())
-                .then(data => {
-                    pageviewsCount.textContent = data.pageviews; // Display pageviews to user
-                    visitsCount.textContent = data.visits; // Display visits to user
+            fetch(apiUrl)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    return res.json();
                 })
-
+                .then(data => {
+                    // Update counters
+                    pageviewsCount.textContent = data.pageviews || 0;
+                    visitsCount.textContent = data.visits || 0;
+                })
+                .catch(error => {
+                    console.error('Error fetching counter data:', error);
+                    alert('Could not load counter data. Please try again later.');
+                });
         }
-
-        sessionStorage.setItem('visit', 'x');
-        // 'visit' item persists in storage for the remainder of the user session
     </script>
 </body>
 
